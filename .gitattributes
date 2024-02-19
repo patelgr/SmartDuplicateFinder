@@ -30,5 +30,5 @@
 *.rar binary
 
 # Set executable attribute for scripts
-*.sh +x
-*.cmd +x
+*.sh text
+*.cmd text
