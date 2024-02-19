@@ -1,0 +1,34 @@
+#
+# https://help.github.com/articles/dealing-with-line-endings/
+#
+# Linux start script should use lf
+/gradlew        text eol=lf
+
+# These are Windows script files and should use crlf
+*.bat           text eol=crlf
+
+# Set line endings to LF for all files
+* text=auto
+
+# Explicitly set text attributes for common source files
+*.java text
+*.kts text
+*.xml text
+*.properties text
+*.css text
+*.js text
+*.html text
+*.md text
+
+# Set binary attributes for compiled files and archives
+*.class binary
+*.jar binary
+*.war binary
+*.ear binary
+*.zip binary
+*.tar.gz binary
+*.rar binary
+
+# Set executable attribute for scripts
+*.sh +x
+*.cmd +x

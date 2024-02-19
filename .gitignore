@@ -1,0 +1,56 @@
+# IDE and editor specific files, compiled class files, and logs
+**/.idea/
+**/.vscode/
+**/.DS_Store*
+**/target/
+**/build/
+**/bin/
+*.class
+*.log
+
+# OS specific temporary files
+.DS_Store
+Thumbs.db
+
+# Test output
+**/test-output/*
+
+# Source control metadata
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+**/doc/
+**/apidocs/
+
+# Specific IDE or build tool files
+**/gradle.properties
+**/local.properties
+**/mvnw.cmd
+**/mvnw
+**/mvn
+
+# Generated files
+**/generated/*
+
+# External library settings
+**/pom.xml.lock
+**/gradle.lock
+
+# Specific IDE settings
+**/settings.gradle
+**/idea/workspace.xml
+
+# Dependency library downloads
+**/lib/*
+
+# Temporary files created by your editor
+*.swp
+*.pyc
+*.obj
+*.so
+
+# Cache directories
+**/.gradle/
+**/.m2/
