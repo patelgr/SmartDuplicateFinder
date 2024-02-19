@@ -17,8 +17,6 @@ Thumbs.db
 
 # Source control metadata
 .git/
-.gitignore
-.gitattributes
 
 # Documentation
 **/doc/

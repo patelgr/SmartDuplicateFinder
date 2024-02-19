@@ -67,3 +67,4 @@ While the current approach is effective, consider exploring alternative algorith
 
 - **Locality-Sensitive Hashing (LSH)**: Efficient for identifying similar but not identical files, potentially useful for media comparisons.
 - **Simhash**: Suitable for large datasets, offering efficient approximate similarity detection.
+- https://github.com/dynatrace-oss/hash4j

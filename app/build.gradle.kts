@@ -18,7 +18,7 @@ java {
 }
 
 application {
-    mainClass = "net.hiralpatel"
+    mainClass = "net.hiralpatel.cli.AppCli"
 }
 
 tasks.named<Test>("test") {
