@@ -1,11 +1,13 @@
 package net.hiralpatel.enums;
 
 public enum FileSizeHashingLevel {
+
+    BASE(0),
     SIZE_64KB(64 * 1024L),       // 64 KB in bytes
-    SIZE_1MB(1 * 1024 * 1024L),  // 1 MB in bytes
-    SIZE_1GB(1 * 1024 * 1024 * 1024L),  // 1 GB in bytes
+    SIZE_1MB(1024 * 1024L),  // 1 MB in bytes
+    SIZE_1GB(1024 * 1024 * 1024L),  // 1 GB in bytes
     SIZE_10GB(10 * 1024 * 1024 * 1024L), // 10 GB in bytes
-    SIZE_1TB(1L * 1024 * 1024 * 1024 * 1024); // 1 TB in bytes
+    SIZE_1TB((long) 1024 * 1024 * 1024 * 1024); // 1 TB in bytes
 
     private final long size;
 
@@ -18,17 +20,11 @@ public enum FileSizeHashingLevel {
         return size;
     }
 
-    public static FileSizeHashingLevel nextLevel(FileSizeHashingLevel current) {
-        FileSizeHashingLevel[] levels = FileSizeHashingLevel.values();
-        int currentIndex = current.ordinal();
-
-        // Check if the current level is not the last one
-        if (currentIndex < levels.length - 1) {
-            // Return the next level
-            return levels[currentIndex + 1];
+    public FileSizeHashingLevel nextLevel() {
+        int nextOrdinal = this.ordinal() + 1;
+        if (nextOrdinal >= FileSizeHashingLevel.values().length) {
+            return null;
         }
-
-        // Return the current level if it's the last one, indicating no next level
-        return current;
+        return FileSizeHashingLevel.values()[nextOrdinal];
     }
 }

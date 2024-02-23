@@ -16,12 +16,8 @@ public class Directory implements FileSystemObject {
     private final Path directoryPath;
     private final List<FileSystemObject> children;
     private final AtomicLong size = new AtomicLong(-1); // Use -1 to indicate that size is not yet computed
-
-    @Override
-    public String toString() {
-        return "Directory{" + "directoryPath=" + directoryPath + '}';
-    }
-
+    private final Lock sizeLock = new ReentrantLock();
+    private boolean isDuplicate = false;
 
     public Directory(Path directoryPath) {
         this.directoryPath = directoryPath;
@@ -31,9 +27,8 @@ public class Directory implements FileSystemObject {
     }
 
     private void initializeChildren() {
-        // Use try-with-resources to ensure the stream is closed properly
-        try (Stream<Path> paths = Files.walk(directoryPath, 1)) { // Limit depth to 1 for immediate children
-            paths.filter(path -> !path.equals(directoryPath)) // Exclude the directory itself
+        try (Stream<Path> paths = Files.walk(directoryPath, 1)) {
+            paths.filter(path -> !path.equals(directoryPath))
                     .forEach(path -> {
                         if (Files.isDirectory(path)) {
                             children.add(new Directory(path));
@@ -45,14 +40,12 @@ public class Directory implements FileSystemObject {
             System.out.println("Error reading directory: " + e.getMessage());
         }
     }
-    private final Lock sizeLock = new ReentrantLock(); // Lock for size calculation
 
     private void calculateSize() {
         long currentSize = size.get();
-        if (currentSize < 0) { // Size not yet computed
-            sizeLock.lock(); // Acquire the lock
+        if (currentSize < 0) {
+            sizeLock.lock();
             try {
-                // Double-check to avoid race conditions
                 currentSize = size.get();
                 if (currentSize < 0) {
                     currentSize = children.stream().mapToLong(FileSystemObject::getSize).sum();
@@ -63,8 +56,6 @@ public class Directory implements FileSystemObject {
             }
         }
     }
-
-
 
     @Override
     public String getName() {
@@ -87,7 +78,17 @@ public class Directory implements FileSystemObject {
 
     // Provide a method to reset or update the cached size if needed
     public void refreshSize() {
-            size.set(-1);
-            calculateSize();
+        size.set(-1);
+        calculateSize();
+    }
+
+    @Override
+    public boolean isDuplicate() {
+        return isDuplicate;
+    }
+
+    @Override
+    public void setDuplicate(boolean duplicate) {
+        isDuplicate = duplicate;
     }
 }

@@ -1,6 +1,7 @@
 package net.hiralpatel.enums;
 
 public enum HashingTechnique {
+    BASE, // SKIP
     CRC32,    // Fast but not cryptographically secure
     ADLER32,  // Similar to CRC32 in terms of use cases and efficiency
     MD5,      // Faster but cryptographically broken

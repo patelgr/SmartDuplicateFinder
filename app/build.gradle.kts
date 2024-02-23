@@ -8,7 +8,9 @@ repositories {
 
 dependencies {
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
+    testImplementation("org.yaml:snakeyaml:2.2")
+
 }
 
 java {

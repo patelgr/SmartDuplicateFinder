@@ -1,20 +1,18 @@
 package net.hiralpatel.model;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class File implements FileSystemObject {
     private final Path path;
-    private String hash;
-
     private final AtomicLong size = new AtomicLong(-1); // Use -1 to indicate that size is not yet computed
+    private final Lock sizeLock = new ReentrantLock(); // Lock for size calculation
+    private String hash;
+    private boolean isDuplicate = false;
 
     public File(Path filePath) {
         this.path = filePath;
@@ -35,7 +33,6 @@ public class File implements FileSystemObject {
     public long getSize() {
         return size.get();
     }
-    private final Lock sizeLock = new ReentrantLock(); // Lock for size calculation
 
     private void calculateSize() {
         long currentSize = size.get();
@@ -56,7 +53,17 @@ public class File implements FileSystemObject {
     }
 
     public void refreshSize() {
-            size.set(-1);
-            calculateSize();
+        size.set(-1);
+        calculateSize();
+    }
+
+    @Override
+    public boolean isDuplicate() {
+        return isDuplicate;
+    }
+
+    @Override
+    public void setDuplicate(boolean duplicate) {
+        isDuplicate = duplicate;
     }
 }

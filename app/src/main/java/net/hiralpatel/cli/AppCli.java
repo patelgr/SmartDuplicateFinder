@@ -3,7 +3,6 @@
  */
 package net.hiralpatel.cli;
 
-import net.hiralpatel.model.Directory;
 import net.hiralpatel.service.DuplicateFinderService;
 
 import java.time.LocalDateTime;
@@ -11,6 +10,7 @@ import java.time.LocalDateTime;
 public class AppCli {
 
     public static void main(String[] args) {
+        logMemoryUsage("Start");
         if (args.length == 0) {
             System.out.println("Usage: AppCli <directory_path>");
             System.exit(1);
@@ -19,10 +19,22 @@ public class AppCli {
         DuplicateFinderService service = new DuplicateFinderService();
         System.out.println(LocalDateTime.now());
         long startTime = System.currentTimeMillis();
-        service.findAndDisplayDuplicates(args);
+        service.searchAndReportDuplicates(args);
         long endTime = System.currentTimeMillis();
-        System.out.println("timetaken:" + (endTime - startTime)/1000);
+        System.out.println("timetaken:" + (endTime - startTime) / 1000);
         System.out.println(LocalDateTime.now());
+        logMemoryUsage("End");
+    }
+
+    private static void logMemoryUsage(String phase) {
+        Runtime runtime = Runtime.getRuntime();
+        double totalMB = runtime.totalMemory() / 1024.0 / 1024.0;
+        double usedMB = (runtime.totalMemory() - runtime.freeMemory()) / 1024.0 / 1024.0;
+        System.out.printf("%s: %s - Mem: Total=%.2fMB, Used=%.2fMB%n", LocalDateTime.now(), phase, totalMB, usedMB);
+    }
+
+    public static void logInfo(String message) {
+        System.out.printf("%s: %s%n", LocalDateTime.now(), message);
     }
 
 }

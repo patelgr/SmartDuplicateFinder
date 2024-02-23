@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["unique", "single-level-duplicate", "parent-child-same-content", "multi-level-structure-duplicate"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "required": ["path", "content"]
+            }
+          },
+          "structures": {
+            "type": "object",
+            "properties": {
+              "original": {
+                "type": "array",
+                "$ref": "#/definitions/fileStructure"
+              },
+              "duplicate": {
+                "type": "array",
+                "$ref": "#/definitions/fileStructure"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["name", "type", "description"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["tests"],
+  "additionalProperties": false,
+  "definitions": {
+    "fileStructure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": ["path", "content"]
+      }
+    }
+  }
+}

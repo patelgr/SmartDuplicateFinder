@@ -3,21 +3,11 @@ package net.hiralpatel.model;
 import java.nio.file.Path;
 import java.util.Objects;
 
-public final class HashNameKey implements Duplicatable {
+public final class HashNameKey {
     private final String hash;
     private final Path path;
 
-    private boolean duplicate = false;
 
-    @Override
-    public boolean isDuplicate() {
-        return duplicate;
-    }
-
-    @Override
-    public void setDuplicate(boolean isDuplicate) {
-        this.duplicate = isDuplicate;
-    }
     public HashNameKey(String hash, Path path) {
         this.hash = hash;
         this.path = path;
@@ -35,5 +25,9 @@ public final class HashNameKey implements Duplicatable {
     @Override
     public int hashCode() {
         return Objects.hash(hash, path);
+    }
+
+    public Path getPath() {
+        return path;
     }
 }

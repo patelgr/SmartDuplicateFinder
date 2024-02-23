@@ -1,70 +1,62 @@
 # Smart Duplicate Finder (SDF)
 
 ## Overview
-SDF is a robust tool designed for efficient duplicate file detection. It employs a layered approach and integrates cryptographic checks to ensure accurate identification of duplicates.
+Smart Duplicate Finder (SDF) is a sophisticated tool designed to accurately identify and report duplicate files across your storage. Leveraging advanced hashing and cryptographic techniques, SDF ensures precise detection while optimizing performance.
 
 ## Features
-- **Intelligent Directory Comparison**: Streamlines duplicate detection by focusing on entire directories before individual files.
-- **Adaptive File Hashing**: Utilizes different hashing strategies based on file size and type for optimized performance.
-- **Cryptographic Verification**: Enhances reliability of duplicate detection with cryptographic hash functions.
+- **Intelligent Directory Analysis**: Prioritizes directory-level comparisons to quickly identify potential duplicates before diving into file-level analysis.
+- **Adaptive Hashing Mechanism**: Dynamically adjusts hashing strategies based on file characteristics, ensuring efficient and effective comparison.
+- **Cryptographic Integrity Checks**: Employs cryptographic hash functions to guarantee the accuracy of duplicate detection, minimizing false positives.
 
 ## Getting Started
 
 ### Prerequisites
-- Java JDK 17+
+- Java JDK 17 or newer
 - Gradle
 
 ### Installation
-Clone the repo and navigate to the project directory:
+To get started with SDF, clone the repository and build the project using Gradle:
+
 ```bash
 git clone https://github.com/patelgr/SmartDuplicateFinder.git
 cd SmartDuplicateFinder
-```
-Build the project with Gradle:
-```bash
 gradle build
 ```
 
 ### Usage
-**Dry Run Mode**: High-Level Directory Comparison (Dry Run Mode):
+SDF can be run in different modes depending on the level of analysis required:
 
-```bash
-java -jar build/libs/sdf.jar -mode dryrun -path "/path/to/directory"
-```
-This command identifies duplicate directories within the specified path but doesn't report individual file duplicates.
+- **Dry Run Mode**: Provides a high-level overview of duplicate directories without delving into file-specific duplicates.
+    ```bash
+    java -jar build/libs/sdf.jar -mode dryrun -path "/path/to/scan"
+    ```
 
-**Fine-Grained File Comparison**: Performs in-depth file comparison.
-```bash
-java -jar build/libs/sdf.jar -mode detailed -path "/path/to/directory"
-```
-This command performs a comprehensive analysis, comparing individual files and reporting all duplicate matches.
+- **Detailed Mode**: Conducts an in-depth comparison, identifying all duplicate files within the specified directory.
+    ```bash
+    java -jar build/libs/sdf.jar -mode detailed -path "/path/to/scan"
+    ```
 
+### Error Handling
+SDF is designed to handle errors gracefully, providing meaningful messages for issues such as invalid arguments, inaccessible directories, or file system errors.
 
-### Error Handling:
+### Real-World Applications
+- **Organizing Downloads**: Quickly declutter your downloads folder by removing redundant files.
+- **Data Backup Verification**: Use SDF to compare backup directories against the original data, ensuring backup integrity.
+- **Media Library Management**: Efficiently organize large collections of photos, music, and videos by removing duplicates.
 
-SDF will exit with an error code and provide a message if it encounters issues like invalid arguments, inaccessible directories, or unexpected file system errors.
-
-#### Real-World Scenarios:
-
-Decluttering Downloads Folder: Use SDF to identify and remove duplicate downloaded files, freeing up disk space.
-Backing Up Important Data: Ensure data integrity by comparing backup directories with the original source using SDF.
-Managing Large Media Collections: Streamline media organization by efficiently detecting duplicate photos, music files, or videos.
-Command Options:
-
-### Help
--h or --help: Displays help information about available options and usage.
--v or --verbose: Enables verbose output with additional details during execution.
+### Command-Line Options
+- `-h` or `--help`: Displays the help menu with information about all available commands.
+- `-v` or `--verbose`: Enables verbose mode for detailed operation logs.
 
 ## Contributing
-Contributions are welcome. Please fork the repository, make your changes, and submit a pull request.
+Contributions to SDF are highly encouraged. Please fork the repository, commit your changes, and submit a pull request for review.
 
 ## License
-Distributed under Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International. Visit [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) for more information.
+SDF is distributed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. Full license details can be found at [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 
-## Potential Algorithm Alternatives:
+## Exploring Further
+For environments or use cases requiring different approaches, consider investigating alternative algorithms such as:
+- **Locality-Sensitive Hashing (LSH)**: Ideal for detecting similar content, particularly in large media files.
+- **Simhash**: Offers efficient similarity detection suitable for vast datasets, often used in document fingerprinting.
 
-While the current approach is effective, consider exploring alternative algorithms for specific scenarios:
-
-- **Locality-Sensitive Hashing (LSH)**: Efficient for identifying similar but not identical files, potentially useful for media comparisons.
-- **Simhash**: Suitable for large datasets, offering efficient approximate similarity detection.
-- https://github.com/dynatrace-oss/hash4j
+Visit [Hash4j](https://github.com/dynatrace-oss/hash4j) for more information on implementing these algorithms.
