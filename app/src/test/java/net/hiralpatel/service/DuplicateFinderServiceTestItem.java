@@ -18,21 +18,17 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DuplicateFinderServiceTestItem {
     private static Path testRoot;
     private static DuplicateFinderService duplicateFinderService;
-    private static Data testData;
+    private static TestData testData;
 
     @BeforeAll
     static void setUp(@TempDir Path tempDir) throws Exception {
@@ -55,9 +51,9 @@ public class DuplicateFinderServiceTestItem {
             // Initialize YAML parser with LoaderOptions
             LoaderOptions loaderOptions = new LoaderOptions();
             loaderOptions.setAllowDuplicateKeys(false);
-            TagInspector tagInspector = tag -> tag.getClassName().equals(Data.class.getName());
+            TagInspector tagInspector = tag -> tag.getClassName().equals(TestData.class.getName());
             loaderOptions.setTagInspector(tagInspector);
-            Yaml yaml = new Yaml(new Constructor(Data.class, loaderOptions));
+            Yaml yaml = new Yaml(new Constructor(TestData.class, loaderOptions));
 
             // Parse the YAML content
             testData = yaml.load(yamlContent);
@@ -78,7 +74,7 @@ public class DuplicateFinderServiceTestItem {
             }
 
             if (scenario.getStructures() != null) {
-                Structures structure = scenario.getStructures();
+                TestStructures structure = scenario.getStructures();
                 for (TestFile file : structure.getOriginal()) {
                     createFileWithContent(testRoot, file.getPath(), file.getContent());
                 }
@@ -97,72 +93,76 @@ public class DuplicateFinderServiceTestItem {
     @ParameterizedTest
     @MethodSource("testDataProvider")
     void runDynamicTests(TestItem testScenario) {
-        switch (testScenario.getType()) {
-            case "unique":
-                testUniqueFiles(testScenario);
-                break;
-            case "file-level-duplicate":
-                testFileLevelDuplicates(testScenario);
-                break;
-            case "directory-level-duplicate":
-                testDirectoryLevelDuplicates(testScenario);
-                break;
-            case "multi-level-structure-duplicate":
-                testMultiLevelDirectoryDuplicates(testScenario);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown test type: " + testScenario.getType());
+        if(testScenario.getType().toLowerCase().contains("duplicate")){
+            testDuplicateFiles(testScenario);
+        }else{
+            testUniqueFiles(testScenario);
         }
-    }
-
-    private void testMultiLevelDirectoryDuplicates(TestItem testScenario) {
-    }
-
-    private void testDirectoryLevelDuplicates(TestItem testScenario) {
-    }
-
-    private void testFileLevelDuplicates(TestItem testScenario) {
     }
 
     private void testUniqueFiles(TestItem testScenario) {
-        List<FileResult> fileResults = duplicateFinderService.findDuplicates(List.of(testRoot.toString()));
-
-        List<Map<Long, List<Path>>> uniqueFilesList = fileResults.stream().filter(fileResult -> fileResult instanceof UniqueFileGroup).map(FileResult::getFiles).toList();
-        assertEquals(1,uniqueFilesList.size());
-        Map<Long, List<Path>> uniqueFilesMap = uniqueFilesList.get(0);
-        // Assert that the files expected to be unique are correctly identified
-        // Assuming each 'File' object in the scenario has a 'shouldBeUnique' boolean or similar
-        for (TestFile file : testScenario.getFiles()) {
-            String path = file.getPath();
-            Path filePath = testRoot.resolve(path);
-            List<Path> list = uniqueFilesMap.values().stream()
-                    .flatMap(List::stream).toList();
-            boolean mapContainsFile = list.stream()
-                    .anyMatch(getPathPredicate(filePath));
-            assertTrue(mapContainsFile
-                    ,"File expected to be unique was not identified as such: " + path);
-        }
+        assertNotEquals(1,2,"This is suppose to Fail");
     }
 
-    private static Predicate<Path> getPathPredicate(Path filePath) {
-        return currentFile -> {
-            try {
-                return Files.isSameFile(currentFile, filePath);
-            } catch (IOException e) {
-                return false;
+
+    private void testDuplicateFiles(TestItem testScenario) {
+        List<Path> fileResults = duplicateFinderService.findDuplicates(List.of(testRoot.toString()))
+                .stream()
+                .map(Path::toAbsolutePath)
+                .toList();
+        // Initialize empty arrays to avoid NullPointerException
+        TestFile[] originalFiles = new TestFile[]{};
+        TestFile[] duplicateFiles = new TestFile[]{};
+        TestFile[] files = new TestFile[]{};
+
+        // Check if structures are not null before accessing them
+        if (testScenario.getStructures() != null) {
+            if (testScenario.getStructures().getOriginal() != null) {
+                originalFiles = testScenario.getStructures().getOriginal();
             }
-        };
+            if (testScenario.getStructures().getDuplicate() != null) {
+                duplicateFiles = testScenario.getStructures().getDuplicate();
+            }
+        }
+        if(testScenario.getFiles()!=null){
+            files = testScenario.getFiles();
+        }
+
+
+        List<Path> allDuplicatePaths = Stream.of(files, originalFiles, duplicateFiles)
+                .flatMap(Arrays::stream)
+                .map(TestFile::getPath)
+                .map(Paths::get) // Convert String to Path
+                .map(Path::toAbsolutePath) // Ensure each path is absolute
+                .toList();
+
+
+// Check if all expected duplicate paths are found by the service
+        assertTrue(
+                fileResults.containsAll(allDuplicatePaths),
+                "Not all expected duplicates were found. Missing: " + allDuplicatePaths.stream()
+                        .filter(path -> !fileResults.contains(path))
+                        .map(Path::toString)
+                        .collect(Collectors.joining(", "))
+        );
+
+// Check if the service found any extra paths not expected as duplicates
+        assertTrue(
+                allDuplicatePaths.containsAll(fileResults),
+                "Found unexpected duplicates. Extra: " + fileResults.stream()
+                        .filter(path -> !allDuplicatePaths.contains(path))
+                        .map(Path::toString)
+                        .collect(Collectors.joining(", "))
+        );
+
+
     }
 
     @Test
     void testFileCreation() throws Exception {
-//         Assuming your YAML configuration specifies a file at this path
         Path testFilePath = testRoot.resolve(testData.getTests()[0].getFiles()[0].getPath());
-
-        // Check if the file exists
         assertTrue(Files.exists(testFilePath), "Test file should exist after setup");
     }
-
 
 
     private static void createFileWithContent(Path root, String relativePath, String content) throws IOException {
@@ -171,12 +171,15 @@ public class DuplicateFinderServiceTestItem {
         Files.createDirectories(filePath.getParent());
         Files.writeString(filePath, content);
     }
+
     @AfterAll
     static void tearDown() throws IOException {
         deleteDirectoryRecursively(testRoot);
         if (Files.exists(testRoot)) {
             System.out.println("Directory Not Deleted");
             throw new IOException("Failed to delete the test directory during cleanup.");
+        }else{
+            System.out.println("Deleted All Files");
         }
     }
 

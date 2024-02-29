@@ -1,6 +1,6 @@
 package net.hiralpatel.service;
 
-public class Data {
+public class TestData {
     private TestItem[] tests;
 
     public TestItem[] getTests() { return tests; }

@@ -1,6 +1,6 @@
 package net.hiralpatel.service;
 
-public class Structures {
+public class TestStructures {
     private TestFile[] original;
     private TestFile[] duplicate;
 

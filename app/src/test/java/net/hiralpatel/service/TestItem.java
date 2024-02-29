@@ -5,7 +5,7 @@ public class TestItem {
     private String type;
     private String description;
     private TestFile[] files;
-    private Structures structures;
+    private TestStructures testStructures;
 
     public String getName() { return name; }
     public void setName(String value) { this.name = value; }
@@ -19,6 +19,6 @@ public class TestItem {
     public TestFile[] getFiles() { return files; }
     public void setFiles(TestFile[] value) { this.files = value; }
 
-    public Structures getStructures() { return structures; }
-    public void setStructures(Structures value) { this.structures = value; }
+    public TestStructures getStructures() { return testStructures; }
+    public void setStructures(TestStructures value) { this.testStructures = value; }
 }

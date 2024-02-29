@@ -4,104 +4,71 @@ import net.hiralpatel.cli.AppCli;
 import net.hiralpatel.model.Directory;
 import net.hiralpatel.model.FileSystemObject;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DuplicateFinderService {
     // Maps file size to a list of FileSystemObjects with that size
 
-    public List<FileResult> findDuplicates(List<String> directoryPaths) {
-        List<Directory> directories = directoryPaths.stream()
-                .map(Path::of)
-                .map(Directory::new)
-                .peek(dir -> AppCli.logInfo(String.format("Initialized: %s, Size: %d", dir, dir.getSize())))
-                .toList();
+    public static List<List<Path>> findDuplicates(List<String> paths) throws IOException, NoSuchAlgorithmException {
+        Map<String, List<Path>> hashGroups = new HashMap<>();
 
-        final Map<Long, List<FileSystemObject>> sizeToFileObjectsMap = directories.stream()
-                .map(this::groupPotentialDuplicatesBySize)
-                .reduce(new ConcurrentHashMap<>(), (acc, map) -> {
-                    map.forEach((key, value) -> acc.merge(key, value, (existingList, newList) -> {
-                        existingList.addAll(newList);
-                        return existingList;
-                    }));
-                    return acc;
-                });
-
-        Map<Long, List<FileSystemObject>> verifiedDuplicates = verifyAndFilterDuplicates(sizeToFileObjectsMap);
-        markDuplicates(verifiedDuplicates);
-
-
-        Map<Long,List<Path>> duplicateResults = new HashMap<>();
-        verifiedDuplicates.forEach((size, fsObjects) -> {
-            List<Path> paths = fsObjects.stream().map(FileSystemObject::getPath).toList();
-            if (!paths.isEmpty()) {
-                duplicateResults.put(size,paths); // Assuming all verified duplicates are to be grouped together
-            }
-        });
-
-        // New code to identify unique files
-        Map<Long,List<Path>> uniqueResults = new HashMap<>();
-        sizeToFileObjectsMap.forEach((size, fsObjects) -> {
-            if (fsObjects.size() == 1) { // This means the file is unique
-                List<Path> paths = fsObjects.stream().map(FileSystemObject::getPath).toList();
-                uniqueResults.put(size,paths);
-            }
-        });
-
-        List<FileResult> results = new ArrayList<>();
-        results.add(new DuplicateFileGroup(duplicateResults));
-        results.add(new UniqueFileGroup(uniqueResults));
-
-        return results;
-    }
-
-
-    public void searchAndReportDuplicates(String... directoryPaths) {
-        findDuplicates(Arrays.asList(directoryPaths));
-    }
-
-
-    private Map<Long, List<FileSystemObject>> groupPotentialDuplicatesBySize(FileSystemObject root) {
-        final Map<Long, List<FileSystemObject>> sizeToFileObjectsMap = new HashMap<>();
-        Deque<FileSystemObject> traversalStack = new ArrayDeque<>();
-        traversalStack.push(root);
-
-        while (!traversalStack.isEmpty()) {
-            FileSystemObject current = traversalStack.pop();
-            if (current instanceof Directory) {
-                traversalStack.addAll(((Directory) current).getChildren());
-            }
-            sizeToFileObjectsMap.computeIfAbsent(current.getSize(), k -> new ArrayList<>()).add(current);
+        // Compute a preliminary hash for each file (e.g., using the first few KBs)
+        for (String filePath : paths) {
+            Path path = Path.of(filePath);
+            String partialHash = computePartialHash(path);
+            hashGroups.putIfAbsent(partialHash, new ArrayList<>());
+            hashGroups.get(partialHash).add(path);
         }
-        return sizeToFileObjectsMap;
-    }
 
-    private Map<Long, List<FileSystemObject>> verifyAndFilterDuplicates(Map<Long, List<FileSystemObject>> potentialDuplicates) {
-        Map<Long, List<FileSystemObject>> confirmedDuplicates = new HashMap<>();
-        potentialDuplicates.forEach((size, fsObjects) -> {
-            if (fsObjects.size() > 1) {
-                List<FileSystemObject> duplicateFiles = HashingService.processAndIdentifyDuplicates(fsObjects).stream()
-                        .filter(FileSystemObject::isDuplicate)
-                        .toList();
-
-                if (!duplicateFiles.isEmpty()) {
-                    confirmedDuplicates.put(size, duplicateFiles);
+        List<List<Path>> duplicates = new ArrayList<>();
+        // For each group with more than one file, compute full hashes to confirm duplicates
+        for (List<Path> group : hashGroups.values()) {
+            if (group.size() > 1) {
+                Map<String, List<Path>> fullHashGroups = new HashMap<>();
+                for (Path path : group) {
+                    String fullHash = computeFullHash(path);
+                    fullHashGroups.putIfAbsent(fullHash, new ArrayList<>());
+                    fullHashGroups.get(fullHash).add(path);
                 }
+                // Add confirmed duplicates (groups with more than one file after full hash)
+                fullHashGroups.values().stream()
+                        .filter(g -> g.size() > 1)
+                        .forEach(duplicates::add);
             }
-        });
-        return confirmedDuplicates;
+        }
+
+        return duplicates;
     }
 
-    private void markDuplicates(Map<Long, List<FileSystemObject>> duplicates) {
-        duplicates.values().stream()
-                .flatMap(Collection::stream)
-                .distinct()
-                .forEach(fsObject -> {
-                    if (fsObject != null) {
-                        fsObject.setDuplicate(true);
-                    }
-                });
+    private static String computePartialHash(Path path) throws IOException, NoSuchAlgorithmException {
+        // Implement a method to compute a hash of the first few KBs of the file
+        // Similar to computeFullHash but only reads part of the file
     }
+
+    private static String computeFullHash(Path path) throws IOException, NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] fileContent = Files.readAllBytes(path);
+        byte[] hashBytes = digest.digest(fileContent);
+        return bytesToHex(hashBytes);
+    }
+
+    private static String bytesToHex(byte[] hash) {
+        StringBuilder hexString = new StringBuilder(2 * hash.length);
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
+    }
+
 
 }
