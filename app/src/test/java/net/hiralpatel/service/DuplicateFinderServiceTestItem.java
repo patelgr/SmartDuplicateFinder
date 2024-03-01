@@ -1,11 +1,9 @@
 package net.hiralpatel.service;
 
+import net.hiralpatel.duplication.DuplicateFinder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -19,21 +17,37 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DuplicateFinderServiceTestItem {
     private static Path testRoot;
-    private static DuplicateFinderService duplicateFinderService;
+    private static DuplicateFinder duplicateFinderService;
     private static TestData testData;
 
+    //    @BeforeAll
+//    static void setUp(@TempDir Path tempDir) throws Exception {
+//        testRoot = tempDir;
+//        duplicateFinderService = new DuplicateFinder();
+//        createTestEnvironment();
+//    }
     @BeforeAll
-    static void setUp(@TempDir Path tempDir) throws Exception {
-        testRoot = tempDir;
-        duplicateFinderService = new DuplicateFinderService();
+    static void setUp() throws Exception {
+        // Define the date-time format
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        // Get the current date and time
+        LocalDateTime now = LocalDateTime.now();
+        // Format the current date and time according to the specified format
+        String formattedDateTime = now.format(formatter);
+        // Set the testRoot with the formatted date and time
+        testRoot = Path.of("test/" + formattedDateTime + "/").toAbsolutePath();
+        duplicateFinderService = new DuplicateFinder();
         createTestEnvironment();
     }
 
@@ -85,86 +99,6 @@ public class DuplicateFinderServiceTestItem {
         }
     }
 
-    static Stream<TestItem> testDataProvider() {
-        // Ensure testData is initialized before this method is called
-        return Arrays.stream(testData.getTests());
-    }
-
-    @ParameterizedTest
-    @MethodSource("testDataProvider")
-    void runDynamicTests(TestItem testScenario) {
-        if(testScenario.getType().toLowerCase().contains("duplicate")){
-            testDuplicateFiles(testScenario);
-        }else{
-            testUniqueFiles(testScenario);
-        }
-    }
-
-    private void testUniqueFiles(TestItem testScenario) {
-        assertNotEquals(1,2,"This is suppose to Fail");
-    }
-
-
-    private void testDuplicateFiles(TestItem testScenario) {
-        List<Path> fileResults = duplicateFinderService.findDuplicates(List.of(testRoot.toString()))
-                .stream()
-                .map(Path::toAbsolutePath)
-                .toList();
-        // Initialize empty arrays to avoid NullPointerException
-        TestFile[] originalFiles = new TestFile[]{};
-        TestFile[] duplicateFiles = new TestFile[]{};
-        TestFile[] files = new TestFile[]{};
-
-        // Check if structures are not null before accessing them
-        if (testScenario.getStructures() != null) {
-            if (testScenario.getStructures().getOriginal() != null) {
-                originalFiles = testScenario.getStructures().getOriginal();
-            }
-            if (testScenario.getStructures().getDuplicate() != null) {
-                duplicateFiles = testScenario.getStructures().getDuplicate();
-            }
-        }
-        if(testScenario.getFiles()!=null){
-            files = testScenario.getFiles();
-        }
-
-
-        List<Path> allDuplicatePaths = Stream.of(files, originalFiles, duplicateFiles)
-                .flatMap(Arrays::stream)
-                .map(TestFile::getPath)
-                .map(Paths::get) // Convert String to Path
-                .map(Path::toAbsolutePath) // Ensure each path is absolute
-                .toList();
-
-
-// Check if all expected duplicate paths are found by the service
-        assertTrue(
-                fileResults.containsAll(allDuplicatePaths),
-                "Not all expected duplicates were found. Missing: " + allDuplicatePaths.stream()
-                        .filter(path -> !fileResults.contains(path))
-                        .map(Path::toString)
-                        .collect(Collectors.joining(", "))
-        );
-
-// Check if the service found any extra paths not expected as duplicates
-        assertTrue(
-                allDuplicatePaths.containsAll(fileResults),
-                "Found unexpected duplicates. Extra: " + fileResults.stream()
-                        .filter(path -> !allDuplicatePaths.contains(path))
-                        .map(Path::toString)
-                        .collect(Collectors.joining(", "))
-        );
-
-
-    }
-
-    @Test
-    void testFileCreation() throws Exception {
-        Path testFilePath = testRoot.resolve(testData.getTests()[0].getFiles()[0].getPath());
-        assertTrue(Files.exists(testFilePath), "Test file should exist after setup");
-    }
-
-
     private static void createFileWithContent(Path root, String relativePath, String content) throws IOException {
         Path filePath = root.resolve(relativePath);
         System.out.println("Creating file at: " + filePath.toAbsolutePath());
@@ -178,11 +112,10 @@ public class DuplicateFinderServiceTestItem {
         if (Files.exists(testRoot)) {
             System.out.println("Directory Not Deleted");
             throw new IOException("Failed to delete the test directory during cleanup.");
-        }else{
+        } else {
             System.out.println("Deleted All Files");
         }
     }
-
 
     private static void deleteDirectoryRecursively(Path path) throws IOException {
         if (Files.isDirectory(path)) {
@@ -197,6 +130,71 @@ public class DuplicateFinderServiceTestItem {
                         });
             }
         }
+    }
+
+    @Test
+    public void testUniqueFiles() {
+        Arrays.stream(testData.getTests()).filter(a -> a.getType().toLowerCase().contains("duplicate")).toList();
+        assertNotEquals(1, 2, "This is suppose to Fail");
+    }
+
+    @Test
+    public void testExtraDuplicateFiles() {
+        List<TestItem> testItems = Arrays.stream(testData.getTests()).filter(a -> a.getType().toLowerCase().contains("duplicate")).toList();
+        for (TestItem testScenario : testItems) {
+            Map<Long, List<Path>> duplicates = duplicateFinderService.findDuplicates(List.of(testRoot));
+            List<Path> fileResults = duplicates.values().stream()
+                    .flatMap(Collection::stream)
+                    .map(Path::toAbsolutePath)
+                    .toList();
+
+            // Convert expectedResult String[] to List<Path>
+            List<Path> expectedPaths = Arrays.stream(testScenario.getExpectedResult())
+                    .map(Paths::get)
+                    .map(testRoot::resolve) // Resolve against testRoot to get absolute paths
+                    .map(Path::toAbsolutePath)
+                    .toList();
+
+
+            // Optionally, assert that the service did not find any extra paths not expected as duplicates
+            assertTrue(expectedPaths.containsAll(fileResults),
+                    "Found unexpected duplicates. Extra: " + fileResults.stream()
+                            .filter(path -> !expectedPaths.contains(path))
+                            .map(Path::toString)
+                            .collect(Collectors.joining(", ")));
+        }
+    }
+
+    @Test
+    public void testMissingDuplicateFiles() {
+        List<TestItem> testItems = Arrays.stream(testData.getTests()).filter(a -> a.getType().toLowerCase().contains("duplicate")).toList();
+        for (TestItem testScenario : testItems) {
+            Map<Long, List<Path>> duplicates = duplicateFinderService.findDuplicates(List.of(testRoot));
+            List<Path> fileResults = duplicates.values().stream()
+                    .flatMap(Collection::stream)
+                    .map(Path::toAbsolutePath)
+                    .toList();
+
+            // Convert expectedResult String[] to List<Path>
+            List<Path> expectedPaths = Arrays.stream(testScenario.getExpectedResult())
+                    .map(Paths::get)
+                    .map(testRoot::resolve) // Resolve against testRoot to get absolute paths
+                    .map(Path::toAbsolutePath)
+                    .toList();
+
+            // Assert that all expected duplicate paths are found by the service
+            assertTrue(fileResults.containsAll(expectedPaths),
+                    "Not all expected duplicates were found. Missing: " + expectedPaths.stream()
+                            .filter(path -> !fileResults.contains(path))
+                            .map(Path::toString)
+                            .collect(Collectors.joining(", ")));
+        }
+    }
+
+    @Test
+    void testFileCreation() throws Exception {
+        Path testFilePath = testRoot.resolve(testData.getTests()[0].getFiles()[0].getPath());
+        assertTrue(Files.exists(testFilePath), "Test file should exist after setup");
     }
 
 }

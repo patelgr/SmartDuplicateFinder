@@ -4,10 +4,20 @@ public class TestStructures {
     private TestFile[] original;
     private TestFile[] duplicate;
 
-    public TestFile[] getOriginal() { return original; }
-    public void setOriginal(TestFile[] value) { this.original = value; }
+    public TestFile[] getOriginal() {
+        return original;
+    }
 
-    public TestFile[] getDuplicate() { return duplicate; }
-    public void setDuplicate(TestFile[] value) { this.duplicate = value; }
+    public void setOriginal(TestFile[] value) {
+        this.original = value;
+    }
+
+    public TestFile[] getDuplicate() {
+        return duplicate;
+    }
+
+    public void setDuplicate(TestFile[] value) {
+        this.duplicate = value;
+    }
 
 }

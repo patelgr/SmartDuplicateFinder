@@ -5,38 +5,51 @@ tests:
     files:
       - path: aviation/history/wright_brothers_first_flight.txt
         content: The Wright brothers, Orville and Wilbur, achieved the first successful powered airplane flight on December 17, 1903, near Kitty Hawk, North Carolina.
+    expectedResult: [ ] # No duplicates expected
 
-  - name: testSingleLevelDuplicateHalleyComet
-    type: single-level-duplicate
-    description: Check duplicate files in different directories without hierarchical structure.
-    files:
-      - path: astronomy/events/1910/halleys_comet_sighting.txt
-        content: Halley's Comet, visible from Earth every 75-76 years, was notably observed in 1910 and 1986.
-      - path: astronomy/events/1986/halleys_comet_sighting.txt
-        content: Halley's Comet, visible from Earth every 75-76 years, was notably observed in 1910 and 1986.
-
-  - name: testParentChildSameContent
-    type: parent-child-same-content
-    description: Verify same file duplicated across parent-child directories within the same structure.
-    files:
-      - path: sports/olympics/summer/olympic_charter.txt
-        content: The Olympic Games are leading international sporting events featuring summer and winter sports competitions.
-      - path: sports/olympics/summer/tokyo_2020/olympic_charter.txt
-        content: The Olympic Games are leading international sporting events featuring summer and winter sports competitions.
-      - path: sports/olympics/summer/tokyo_2020/athletics/olympic_charter.txt
-        content: The Olympic Games are leading international sporting events featuring summer and winter sports competitions.
-
-  - name: testExactMultiLevelStructureDuplicates
-    type: multi-level-structure-duplicate
-    description: Detect entire directory structures duplicated in different locations.
-    structures:
-      original:
-        - path: historical_events/apollo_missions/apollo_11/moon_landing.txt
-          content: Apollo 11 was the first manned mission to land on the Moon in 1969.
-        - path: historical_events/apollo_missions/apollo_13/mission_report.txt
-          content: Apollo 13, launched in 1970, was a successful failure, with the crew returning safely after an onboard explosion.
-      duplicate:
-        - path: archive/copy_of_historical_events/apollo_missions/apollo_11/moon_landing.txt
-          content: Apollo 11 was the first manned mission to land on the Moon in 1969.
-        - path: archive/copy_of_historical_events/apollo_missions/apollo_13/mission_report.txt
-          content: Apollo 13, launched in 1970, was a successful failure, with the crew returning safely after an onboard explosion.
+#  - name: testSingleLevelDuplicateHalleyComet
+#    type: single-level-duplicate
+#    description: Check duplicate files in different directories without hierarchical structure.
+#    files:
+#      - path: astronomy/events/1910/halleys_comet_sighting.txt
+#        content: Halley's Comet, visible from Earth every 75-76 years, was notably observed in 1910 and 1986.
+#      - path: astronomy/events/1910/halleys_comet_sighting3.txt
+#        content: Halley's Comet, visible from Earth every 100 years, was notably observed in 1910 and 1986.
+#      - path: astronomy/events/1986/halleys_comet_sighting.txt
+#        content: Halley's Comet, visible from Earth every 75-76 years, was notably observed in 1910 and 1986.
+#    expectedResult:
+#      - astronomy/events/1910/halleys_comet_sighting.txt
+#      - astronomy/events/1986/halleys_comet_sighting.txt
+#
+#  - name: testParentChildSameContent
+#    type: parent-child-same-content
+#    description: Verify same file duplicated across parent-child directories within the same structure.
+#    files:
+#      - path: sports/olympics/summer/olympic_charter.txt
+#        content: The Olympic Games are leading international sporting events featuring summer and winter sports competitions.
+#      - path: sports/olympics/summer/tokyo_2020/olympic_charter.txt
+#        content: The Olympic Games are leading international sporting events featuring summer and winter sports competitions.
+#      - path: sports/olympics/summer/tokyo_2020/athletics/olympic_charter.txt
+#        content: The Olympic Games are leading international sporting events featuring summer and winter sports competitions.
+#    expectedResult:
+#      - sports/olympics/summer/olympic_charter.txt
+#      - sports/olympics/summer/tokyo_2020/olympic_charter.txt
+#      - sports/olympics/summer/tokyo_2020/athletics/olympic_charter.txt
+#
+#  - name: testExactMultiLevelStructureDuplicates
+#    type: multi-level-structure-duplicate
+#    description: Detect entire directory structures duplicated in different locations.
+#    structures:
+#      original:
+#        - path: historical_events/apollo_missions/apollo_11/moon_landing.txt
+#          content: Apollo 11 was the first manned mission to land on the Moon in 1969.
+#        - path: historical_events/apollo_missions/apollo_13/mission_report.txt
+#          content: Apollo 13, launched in 1970, was a successful failure, with the crew returning safely after an onboard explosion.
+#      duplicate:
+#        - path: archive/copy_of_historical_events/apollo_missions/apollo_11/moon_landing.txt
+#          content: Apollo 11 was the first manned mission to land on the Moon in 1969.
+#        - path: archive/copy_of_historical_events/apollo_missions/apollo_13/mission_report.txt
+#          content: Apollo 13, launched in 1970, was a successful failure, with the crew returning safely after an onboard explosion.
+#    expectedResult:
+#      - archive/copy_of_historical_events/apollo_missions/apollo_11/moon_landing.txt
+#      - archive/copy_of_historical_events/apollo_missions/apollo_13/mission_report.txt

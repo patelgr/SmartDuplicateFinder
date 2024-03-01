@@ -1,4 +1,4 @@
-package net.hiralpatel.model;
+package net.hiralpatel.model.filesystem;
 
 import java.io.IOException;
 import java.nio.file.Files;
