@@ -20,10 +20,11 @@ public class DuplicateFinder {
      * @param paths A list of paths to scan for duplicate files.
      * @return A map where keys are file sizes and values are lists of paths to duplicate files of that size.
      */
-    public Map<Long, List<Path>> findDuplicates(List<Path> paths) {
+    public Map<String, List<Path>> findDuplicates(List<Path> paths) {
         StepWrapper wrapper = new StepWrapper();
 
         // Step 1: Find common ancestor
+
         Path commonAncestor = wrapper.execute("Find Common Ancestor", () ->
                 DirectoryAggregator.findCommonAncestor(paths)
         );
@@ -40,14 +41,17 @@ public class DuplicateFinder {
 
         // Step 4: Build directory structure with confirmed duplicates
         Directory rootDirectory = wrapper.execute("Build Directory Structure", () ->
-                new Directory(commonAncestor, flattenFileHashes(fileHashes))
+                new Directory(commonAncestor, fileHashes)
         );
 
         // Step 5: Extract duplicates from the directory structure
 
-        return wrapper.execute("Extract Duplicates", () ->
+        Map<String, List<Path>> extractDuplicates = wrapper.execute("Extract Duplicates", () ->
                 DuplicateExtractor.extract(rootDirectory)
         );
+
+        StepWrapper.displayStatsReport();
+        return extractDuplicates;
     }
 
 

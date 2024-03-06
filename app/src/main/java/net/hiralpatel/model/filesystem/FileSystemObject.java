@@ -13,4 +13,8 @@ public interface FileSystemObject {
     boolean isDuplicate();
 
     void setDuplicate(boolean duplicate);
+
+    void setHash(String key);
+    String getHash();
+
 }

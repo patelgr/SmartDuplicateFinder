@@ -1,0 +1,42 @@
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+public class MaskingLayout extends PatternLayout {
+  private List<String> accountNumberPhrases = Arrays.asList(
+          "AccountNumber",
+          "originalAccountNumber",
+          "crossReferenceAccountNumber",
+          "Account Number" // Add more phrases as needed
+      );
+
+      // Concatenate phrases into a regex pattern with OR operator
+      private String accountNumberRegex = String.join("|", accountNumberPhrases);
+
+      // Compile the regex pattern with CASE_INSENSITIVE flag
+      private Pattern accountNumberPattern = Pattern.compile(
+          "(" + accountNumberRegex + ")[\\W_]*(\\d{2,14})(\\d{6})",
+          Pattern.CASE_INSENSITIVE
+      );
+
+    @Override
+    public String doLayout(ILoggingEvent event) {
+        return maskMessage(super.doLayout(event));
+    }
+
+    private String maskMessage(String message) {
+        if (message == null) return null;
+
+        Matcher matcher = accountNumberPattern.matcher(message);
+        StringBuffer sb = new StringBuffer();
+
+        while (matcher.find()) {
+            // Replace all but the last six digits with asterisks
+            String maskedSection = matcher.group(2).replaceAll("\\d", "*");
+            String replacement = matcher.group(1) + maskedSection + matcher.group(3);
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(sb);
+
+        return sb.toString();
+    }
+}

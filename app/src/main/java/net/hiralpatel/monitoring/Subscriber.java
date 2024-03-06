@@ -1,5 +1,5 @@
 package net.hiralpatel.monitoring;
 
 public interface Subscriber {
-    void handleEvent(String event);
+    void handleEvent(Object event);
 }

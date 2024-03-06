@@ -66,4 +66,14 @@ public class File implements FileSystemObject {
     public void setDuplicate(boolean duplicate) {
         isDuplicate = duplicate;
     }
+
+    @Override
+    public void setHash(String theHash) {
+        hash = theHash;
+    }
+
+    @Override
+    public String getHash() {
+        return hash;
+    }
 }

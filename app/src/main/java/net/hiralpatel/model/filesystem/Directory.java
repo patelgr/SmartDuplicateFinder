@@ -4,10 +4,14 @@ package net.hiralpatel.model.filesystem;
 import net.hiralpatel.monitoring.EventPublisher;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,17 +27,24 @@ public class Directory implements FileSystemObject {
     private final Lock sizeLock = new ReentrantLock();
     private boolean isDuplicate = false;
 
-    public Directory(Path directoryPath, List<Path> fileDuplicates) {
+    public Directory(Path directoryPath, Map<String, List<Path>> fileDuplicates) {
         eventPublisher.publishEvent("Creating Dir:" + directoryPath);
         this.directoryPath = directoryPath;
-        this.children = new ArrayList<>();
+        int initialCapacity = countEntriesInDirectory(directoryPath);
+        this.children = new ArrayList<>(initialCapacity);
         initializeChildren(fileDuplicates);
         refreshSize();
         checkAndMarkDuplicate();
     }
+    private static int countEntriesInDirectory(Path directoryPath) {
+        try (Stream<Path> stream = Files.list(directoryPath)) {
+            return (int) stream.count();
+        }catch (Exception e){
+            return 0;
+        }
+    }
 
-
-    private void initializeChildren(List<Path> fileDuplicates) {
+    private void initializeChildren(Map<String, List<Path>> fileDuplicates) {
         try (Stream<Path> paths = Files.walk(directoryPath, 1)) {
             paths.filter(path -> !path.equals(directoryPath)) // Exclude the directory itself
                     .filter(path -> !path.getFileName().toString().equals(".DS_Store")) // Exclude .DS_Store files
@@ -41,13 +52,15 @@ public class Directory implements FileSystemObject {
                         FileSystemObject child;
                         if (Files.isDirectory(path)) {
                             child = new Directory(path, fileDuplicates);
+                            child.setHash(child.getHash()); // Set the hash to the key of the matching entry
                         } else {
                             child = new File(path);
-                            // Check if the file is marked as a duplicate in fileDuplicates
-                            for (Path d : fileDuplicates) {
-                                if (d.equals(path)) {
+                            // Iterate over fileDuplicates to check if any List<Path> contains the current path
+                            for (Map.Entry<String, List<Path>> entry : fileDuplicates.entrySet()) {
+                                if (entry.getValue().contains(path)) {
                                     child.setDuplicate(true);
-                                    break;
+                                    child.setHash(entry.getKey()); // Set the hash to the key of the matching entry
+                                    break; // No need to check further once a match is found
                                 }
                             }
                         }
@@ -112,5 +125,39 @@ public class Directory implements FileSystemObject {
     @Override
     public void setDuplicate(boolean duplicate) {
         isDuplicate = duplicate;
+    }
+
+    private String hash;
+    @Override
+    public void setHash(String key) {
+        // Use the directory size to generate the hash
+        String sizeStr = String.valueOf(getSize());
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encodedHash = digest.digest(sizeStr.getBytes(StandardCharsets.UTF_8));
+            this.hash = bytesToHex(encodedHash);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            // Fallback to a simpler hash in case SHA-256 is not available
+            this.hash = String.valueOf(sizeStr.hashCode());
+        }
+    }
+
+    // Helper method to convert byte array into a hexadecimal string
+    private static String bytesToHex(byte[] hash) {
+        StringBuilder hexString = new StringBuilder(2 * hash.length);
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
+    }
+
+    @Override
+    public String getHash() {
+        return hash;
     }
 }

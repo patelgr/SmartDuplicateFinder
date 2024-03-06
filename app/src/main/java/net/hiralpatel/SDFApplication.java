@@ -20,19 +20,19 @@ class SDFApplication {
         LocalDateTime started = LocalDateTime.now();
         System.out.println("Started: " + started);
         String mode = System.getProperty("mode"); // Check JVM property
-        // Alternatively, parse args to find '--mode=server'
+        System.out.println("Mode:"+mode);
 
-        if ("server".equals(mode)) {
+        if ("client".equals(mode)) {
+            MonitoringClient.runClient();
+        } else {
+            System.out.println("Mode:server");
             EventPublisher publisher = EventPublisher.INSTANCE;
-            // Your application logic...
-            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/5tb"));
+            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents/Pictures"));
             DuplicateFinder finder = new DuplicateFinder();
-
             try (SocketEventPublisher socketEventPublisher = new SocketEventPublisher(5000)) {
                 publisher.addSubscriber(socketEventPublisher); // Correctly adds as a Subscriber
-//                publisher.addSubscriber(eventCollector); // Correctly adds as a Subscriber
                 publisher.publishEvent("Application started");
-                Map<Long, List<Path>> duplicates = finder.findDuplicates(directoryPaths);
+                Map<String, List<Path>> duplicates = finder.findDuplicates(directoryPaths);
 
                 // Generate and output report
                 ReportGenerator.generateReport(duplicates);
@@ -43,8 +43,6 @@ class SDFApplication {
 
             LocalDateTime ended = LocalDateTime.now();
             System.out.println("Ended: " + ended + ",TimeTaken" + Duration.between(started, ended));
-        } else {
-            MonitoringClient.runClient();
         }
     }
 

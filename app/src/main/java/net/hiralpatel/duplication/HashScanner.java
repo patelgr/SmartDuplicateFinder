@@ -1,18 +1,16 @@
 package net.hiralpatel.duplication;
 
 import net.hiralpatel.analytics.StatisticsCollector;
-import net.hiralpatel.hashing.AdaptiveHashing;
+import net.hiralpatel.hashing.CRC32Hashing;
 import net.hiralpatel.hashing.HashingMode;
 import net.hiralpatel.hashing.HashingStrategy;
+import net.hiralpatel.hashing.SHA256HashingStrategy;
 import net.hiralpatel.monitoring.EventPublisher;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -22,68 +20,100 @@ public class HashScanner {
     private static final StatisticsCollector statsCollector = new StatisticsCollector();
     private static final EventPublisher eventPublisher = EventPublisher.INSTANCE;
 
-    /**
-     * Scans for duplicate files using a specified hashing strategy.
-     * Initially computes hashes for segments of files to quickly identify potential duplicates,
-     * then confirms duplicates by hashing entire file contents.
-     *
-     * @param filesBySize Map of files grouped by size, as potential duplicates are likely to have the same size.
-     * @return Map of file hashes to lists of paths that have identical content.
-     */
-    public static Map<String, List<Path>> scanForFileDuplicates(Map<Long, List<Path>> filesBySize) {
-        eventPublisher.publishEvent("scanForFileDuplicates Started");
-        final HashingStrategy hashingStrategy = new AdaptiveHashing();
 
-        eventPublisher.publishEvent("scanForFileDuplicates Converting Long to String Map");
-        Map<String, List<Path>> filesGroupedBySize = filesBySize.entrySet().stream()
+    public static Map<String, List<Path>> scanForFileDuplicates(Map<Long, List<Path>> filesBySize) {
+        eventPublisher.publishEvent("Duplicate scan initiated.");
+
+        // Convert the file size map keys from Long to String for consistency
+        Map<String, List<Path>> filesGroupedBySize = convertKeysToString(filesBySize);
+
+        // Step 1: Identify potential duplicates by hashing initial file segments with CRC32
+        Map<String, List<Path>> initialSegmentDuplicates = performInitialHashing(filesGroupedBySize);
+
+        // Step 2: Refine the list of potential duplicates by hashing initial segments with SHA256
+        Map<String, List<Path>> refinedInitialSegmentDuplicates = refineDuplicatesWithSHA256(initialSegmentDuplicates);
+
+        // Step 3: Confirm duplicates by hashing the full contents of the potential duplicates using CRC32
+//        Map<String, List<Path>> confirmedDuplicates = confirmDuplicatesWithCRC32(refinedInitialSegmentDuplicates);
+
+        // Generate a report on the scanning process
+        generateDuplicateScanningReport();
+
+        return refinedInitialSegmentDuplicates;
+    }
+
+    private static Map<String, List<Path>> convertKeysToString(Map<Long, List<Path>> filesBySize) {
+        return filesBySize.entrySet().stream()
                 .collect(Collectors.toMap(
                         entry -> String.valueOf(entry.getKey()),
                         Map.Entry::getValue
                 ));
-
-        // Compute hashes for initial segments of the files
-        eventPublisher.publishEvent("scanForFileDuplicates identifyDuplicates HashingMode.INITIAL_SEGMENT");
-        Map<String, List<Path>> potentialDuplicateHashes = identifyDuplicates(filesGroupedBySize, hashingStrategy, HashingMode.INITIAL_SEGMENT);
-
-        // Confirm duplicates by hashing the full contents of the files
-        eventPublisher.publishEvent("scanForFileDuplicates identifyDuplicates HashingMode.FULL_FILE");
-        Map<String, List<Path>> confirmedDuplicateHashes = identifyDuplicates(potentialDuplicateHashes, hashingStrategy, HashingMode.FULL_FILE);
-
-        // Generate a report on the scanning process
-        eventPublisher.publishEvent("scanForFileDuplicates generateTabulatedReport");
-        statsCollector.generateTabulatedReport();
-
-        return confirmedDuplicateHashes;
     }
 
-    /**
-     * Identifies potential duplicate files based on hashing mode and groups them by hash.
-     *
-     * @param filesGrouped    Map of file groupings to process.
-     * @param hashingStrategy Strategy to use for computing file hashes.
-     * @param mode            Hashing mode to apply (initial segment or full file).
-     * @return Map of file hashes to lists of paths with identical hashes.
-     */
+    private static Map<String, List<Path>> performInitialHashing(Map<String, List<Path>> filesGroupedBySize) {
+        HashingStrategy initialHashingStrategy = new CRC32Hashing();
+        long totalFiles = filesGroupedBySize.values().stream().mapToLong(Collection::size).sum();
+        eventPublisher.publishEvent(String.format("Step 1: Hashing initial segments of %d files using CRC32 to identify potential duplicates.", totalFiles));
+
+        Map<String, List<Path>> initialSegmentDuplicates = identifyDuplicates(filesGroupedBySize, initialHashingStrategy, HashingMode.INITIAL_SEGMENT);
+        logDelta("Step 1", totalFiles, initialSegmentDuplicates);
+
+        return initialSegmentDuplicates;
+    }
+
+    private static Map<String, List<Path>> refineDuplicatesWithSHA256(Map<String, List<Path>> potentialDuplicates) {
+        HashingStrategy refinedHashingStrategy = new SHA256HashingStrategy();
+        long totalPotentialDuplicates = potentialDuplicates.values().stream().mapToLong(Collection::size).sum();
+        eventPublisher.publishEvent(String.format("Step 2: Refining potential duplicates among %d files using SHA256 on initial segments.", totalPotentialDuplicates));
+
+        Map<String, List<Path>> refinedDuplicates = identifyDuplicates(potentialDuplicates, refinedHashingStrategy, HashingMode.INITIAL_SEGMENT);
+        logDelta("Step 2", totalPotentialDuplicates, refinedDuplicates);
+
+        return refinedDuplicates;
+    }
+
+    private static Map<String, List<Path>> confirmDuplicatesWithCRC32(Map<String, List<Path>> potentialDuplicates) {
+        HashingStrategy initialHashingStrategy = new CRC32Hashing();
+        long totalPotentialDuplicates = potentialDuplicates.values().stream().mapToLong(Collection::size).sum();
+        eventPublisher.publishEvent(String.format("Step 3: Confirming duplicates among %d files by hashing full file contents with CRC32.", totalPotentialDuplicates));
+
+        Map<String, List<Path>> confirmedDuplicates = identifyDuplicates(potentialDuplicates, initialHashingStrategy, HashingMode.FULL_FILE);
+        logDelta("Step 3", totalPotentialDuplicates, confirmedDuplicates);
+
+        return confirmedDuplicates;
+    }
+
+    private static void logDelta(String step, long previousCount, Map<String, List<Path>> currentDuplicates) {
+        long currentCount = currentDuplicates.values().stream().mapToLong(Collection::size).sum();
+        long delta = previousCount - currentCount;
+        eventPublisher.publishEvent(String.format("%s Complete: Delta of %d files reduced to %d potential duplicates.", step, delta, currentCount));
+    }
+
+    private static void generateDuplicateScanningReport() {
+        eventPublisher.publishEvent("Generating duplicate scanning report.");
+        statsCollector.generateTabulatedReport(); // Consider passing the finalConfirmedDuplicates map for detailed reporting
+    }
+
     private static Map<String, List<Path>> identifyDuplicates(Map<String, List<Path>> filesGrouped, HashingStrategy hashingStrategy, HashingMode mode) {
-        Map<String, List<Path>> duplicateGroups = new HashMap<>();
+        Map<String, List<Path>> duplicateGroups = new HashMap<>(filesGrouped.size());
         filesGrouped.forEach((key, paths) -> {
             if (paths.size() > 1) { // Only consider groups with more than one file
-                duplicateGroups.putAll(hashAndGroupFiles(paths, mode, hashingStrategy));
+                // hashAndGroupFiles should return a Map where each key is a hash and the value is a list of paths that have that hash
+                Map<String, List<Path>> hashedFiles = hashAndGroupFiles(paths, mode, hashingStrategy);
+                // Filter hashedFiles to include only those entries with a list size of 2 or more
+                hashedFiles.forEach((hash, groupedPaths) -> {
+                    if (groupedPaths.size() > 1) {
+                        duplicateGroups.put(hash, groupedPaths);
+                    }
+                });
             }
         });
         return duplicateGroups;
     }
 
-    /**
-     * Hashes a list of files using the provided hashing strategy and mode, and groups them by hash.
-     *
-     * @param paths           List of file paths to hash.
-     * @param mode            Hashing mode (initial segment or full file).
-     * @param hashingStrategy Strategy for computing file hashes.
-     * @return Map of file hashes to lists of paths with that hash.
-     */
+
     private static Map<String, List<Path>> hashAndGroupFiles(List<Path> paths, HashingMode mode, HashingStrategy hashingStrategy) {
-        Map<String, List<Path>> hashGroups = new HashMap<>();
+        Map<String, List<Path>> hashGroups = new HashMap<>(paths.size());
         paths.forEach(path -> {
             String hash = computeFileHash(path, mode, hashingStrategy);
             if (hash != null) {
@@ -93,14 +123,6 @@ public class HashScanner {
         return hashGroups;
     }
 
-    /**
-     * Computes the hash of a file based on the provided hashing mode and strategy.
-     *
-     * @param path            Path of the file to hash.
-     * @param mode            Hashing mode (initial segment or full file).
-     * @param hashingStrategy Strategy for computing the file hash.
-     * @return The computed hash as a String, or null if an error occurs.
-     */
     private static String computeFileHash(Path path, HashingMode mode, HashingStrategy hashingStrategy) {
         long startTime = System.nanoTime();
         String hash = null;
