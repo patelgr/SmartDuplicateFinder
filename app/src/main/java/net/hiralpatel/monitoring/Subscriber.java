@@ -1,5 +1,7 @@
 package net.hiralpatel.monitoring;
 
 public interface Subscriber {
-    void handleEvent(Object event);
+    void handleEvent(Event event);
+    boolean isInterestedIn(LogLevel logLevel);
 }
+

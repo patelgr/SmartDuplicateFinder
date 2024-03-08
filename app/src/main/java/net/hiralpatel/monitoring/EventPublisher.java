@@ -1,11 +1,14 @@
 package net.hiralpatel.monitoring;
 
+import net.hiralpatel.monitoring.LogLevel;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 public enum EventPublisher {
     INSTANCE;
@@ -21,7 +24,6 @@ public enum EventPublisher {
     public void removeSubscriber(Subscriber subscriber) {
         boolean removed = subscribers.remove(subscriber);
         if (removed) {
-            // Optionally, also clear the error count for the removed subscriber
             subscriberErrorCounts.remove(subscriber);
             System.out.println("Subscriber removed successfully.");
         } else {
@@ -29,11 +31,15 @@ public enum EventPublisher {
         }
     }
 
-    public void publishEvent(Object event) {
-        subscribers.forEach(subscriber -> submitEvent(event, subscriber));
+    public void publishEvent(Event event) {
+        subscribers.forEach(subscriber -> {
+            if (subscriber.isInterestedIn(event.logLevel())) {
+                submitEvent(event, subscriber);
+            }
+        });
     }
 
-    private void submitEvent(Object event, Subscriber subscriber) {
+    private void submitEvent(Event event, Subscriber subscriber) {
         executorService.submit(() -> {
             try {
                 subscriber.handleEvent(event);
@@ -52,6 +58,8 @@ public enum EventPublisher {
     }
 
     public void shutdown() {
-        executorService.shutdown();
+        executorService.shutdownNow();
+        // Consider adding logic to wait for tasks to finish if necessary
     }
 }
+

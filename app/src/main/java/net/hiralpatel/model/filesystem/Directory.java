@@ -2,6 +2,7 @@ package net.hiralpatel.model.filesystem;
 
 
 import net.hiralpatel.monitoring.EventPublisher;
+import net.hiralpatel.monitoring.Events;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,14 +29,20 @@ public class Directory implements FileSystemObject {
     private boolean isDuplicate = false;
 
     public Directory(Path directoryPath, Map<String, List<Path>> fileDuplicates) {
-        eventPublisher.publishEvent("Creating Dir:" + directoryPath);
         this.directoryPath = directoryPath;
         int initialCapacity = countEntriesInDirectory(directoryPath);
+        eventPublisher.publishEvent(Events.InfoEvent("Creating directory: " + directoryPath + " with " + initialCapacity + " initial entries."));
         this.children = new ArrayList<>(initialCapacity);
-        initializeChildren(fileDuplicates);
-        refreshSize();
-        checkAndMarkDuplicate();
+        try {
+            initializeChildren(fileDuplicates);
+            refreshSize();
+            checkAndMarkDuplicate();
+        } catch (Exception e) {
+            eventPublisher.publishEvent(Events.InfoEvent("Error initializing directory " + directoryPath + ": " + e.getMessage()));
+        }
+        eventPublisher.publishEvent(Events.InfoEvent("Directory created: " + directoryPath + " with " + children.size() + " children."));
     }
+
     private static int countEntriesInDirectory(Path directoryPath) {
         try (Stream<Path> stream = Files.list(directoryPath)) {
             return (int) stream.count();
@@ -45,47 +52,58 @@ public class Directory implements FileSystemObject {
     }
 
     private void initializeChildren(Map<String, List<Path>> fileDuplicates) {
+        eventPublisher.publishEvent(Events.InfoEvent("Initializing children for directory: " + directoryPath));
         try (Stream<Path> paths = Files.walk(directoryPath, 1)) {
-            paths.filter(path -> !path.equals(directoryPath)) // Exclude the directory itself
-                    .filter(path -> !path.getFileName().toString().equals(".DS_Store")) // Exclude .DS_Store files
+            paths.filter(path -> !path.equals(directoryPath))
+                    .filter(path -> !path.getFileName().toString().equals(".DS_Store"))
                     .forEach(path -> {
                         FileSystemObject child;
-                        if (Files.isDirectory(path)) {
-                            child = new Directory(path, fileDuplicates);
-                            child.setHash(child.getHash()); // Set the hash to the key of the matching entry
-                        } else {
-                            child = new File(path);
-                            // Iterate over fileDuplicates to check if any List<Path> contains the current path
-                            for (Map.Entry<String, List<Path>> entry : fileDuplicates.entrySet()) {
-                                if (entry.getValue().contains(path)) {
-                                    child.setDuplicate(true);
-                                    child.setHash(entry.getKey()); // Set the hash to the key of the matching entry
-                                    break; // No need to check further once a match is found
-                                }
+                        try {
+                            if (Files.isDirectory(path)) {
+                                child = new Directory(path, fileDuplicates);
+                            } else {
+                                child = new File(path);
+                                fileDuplicates.forEach((hash, pathsList) -> {
+                                    if (pathsList.contains(path)) {
+                                        child.setDuplicate(true);
+                                        child.setHash(hash);
+                                    }
+                                });
                             }
+                            children.add(child);
+                            eventPublisher.publishEvent(Events.InfoEvent("Added child: " + path));
+                        } catch (Exception e) {
+                            eventPublisher.publishEvent(Events.InfoEvent("Error adding child: " + path + " - " + e.getMessage()));
                         }
-                        children.add(child);
                     });
         } catch (IOException e) {
-            System.out.println("Error reading directory: " + e.getMessage());
+            eventPublisher.publishEvent(Events.InfoEvent("Error initializing children for directory " + directoryPath + ": " + e.getMessage()));
         }
     }
+
 
     private void calculateSize() {
         long currentSize = size.get();
         if (currentSize < 0) {
+            eventPublisher.publishEvent(Events.InfoEvent("Calculating size for directory: " + directoryPath));
             sizeLock.lock();
             try {
                 currentSize = size.get();
                 if (currentSize < 0) {
                     currentSize = children.stream().mapToLong(FileSystemObject::getSize).sum();
                     size.set(currentSize);
+                    eventPublisher.publishEvent(Events.InfoEvent("Size calculated for directory: " + directoryPath + " - Size: " + currentSize));
+                } else {
+                    eventPublisher.publishEvent(Events.InfoEvent("Size calculation skipped for directory: " + directoryPath + " - Already calculated."));
                 }
             } finally {
-                sizeLock.unlock(); // Ensure the lock is always released
+                sizeLock.unlock();
             }
+        } else {
+            eventPublisher.publishEvent(Events.InfoEvent("Size retrieval for directory: " + directoryPath + " - Size: " + currentSize));
         }
     }
+
 
     @Override
     public String getName() {
@@ -115,7 +133,9 @@ public class Directory implements FileSystemObject {
     // Method to check if the directory itself is a duplicate (all children are duplicates)
     public void checkAndMarkDuplicate() {
         isDuplicate = children.stream().allMatch(FileSystemObject::isDuplicate);
+        eventPublisher.publishEvent(Events.InfoEvent("Duplicate check for directory: " + directoryPath + " - Is duplicate: " + isDuplicate));
     }
+
 
     @Override
     public boolean isDuplicate() {

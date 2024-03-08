@@ -1,6 +1,7 @@
 package net.hiralpatel.analytics;
 
 import net.hiralpatel.monitoring.EventPublisher;
+import net.hiralpatel.monitoring.Events;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ public class StepWrapper {
     }
 
     public <T> T execute(String stepName, Supplier<T> stepLogic) {
-        publisher.publishEvent("Starting " + stepName);
+        publisher.publishEvent(Events.InfoEvent("Starting " + stepName));
 
         long startTime = System.currentTimeMillis();
         T result = stepLogic.get(); // Execute the step logic
@@ -38,7 +39,7 @@ public class StepWrapper {
 
         StepStats stats = new StepStats(duration, totalSize, stepName);
         stepStatsList.add(stats);
-        publisher.publishEvent(String.format("Completed %s in %d ms. Total items: %d", stepName, duration, totalSize));
+        publisher.publishEvent(Events.InfoEvent(String.format("Completed %s in %d ms. Total items: %d", stepName, duration, totalSize)));
 
         return result;
     }

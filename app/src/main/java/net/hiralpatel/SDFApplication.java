@@ -2,9 +2,10 @@ package net.hiralpatel;
 
 import net.hiralpatel.duplication.DuplicateFinder;
 import net.hiralpatel.monitoring.EventPublisher;
+import net.hiralpatel.monitoring.Events;
 import net.hiralpatel.monitoring.MonitoringClient;
 import net.hiralpatel.monitoring.SocketEventPublisher;
-import net.hiralpatel.ui.ReportGenerator;
+import net.hiralpatel.ui.ReportGeneratorBySize;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -20,23 +21,25 @@ class SDFApplication {
         LocalDateTime started = LocalDateTime.now();
         System.out.println("Started: " + started);
         String mode = System.getProperty("mode"); // Check JVM property
-        System.out.println("Mode:"+mode);
+        System.out.println("Mode:" + mode);
 
         if ("client".equals(mode)) {
             MonitoringClient.runClient();
         } else {
             System.out.println("Mode:server");
             EventPublisher publisher = EventPublisher.INSTANCE;
-            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents/Pictures"));
+            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents"));
             DuplicateFinder finder = new DuplicateFinder();
             try (SocketEventPublisher socketEventPublisher = new SocketEventPublisher(5000)) {
                 publisher.addSubscriber(socketEventPublisher); // Correctly adds as a Subscriber
-                publisher.publishEvent("Application started");
+
+                // Use Events utility class for creating Event objects
+                publisher.publishEvent(Events.InfoEvent("Application started"));
                 Map<String, List<Path>> duplicates = finder.findDuplicates(directoryPaths);
 
                 // Generate and output report
-                ReportGenerator.generateReport(duplicates);
-                publisher.publishEvent("Processing completed");
+                ReportGeneratorBySize.generateReport(duplicates);
+                publisher.publishEvent(Events.InfoEvent("Processing completed"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -45,6 +48,7 @@ class SDFApplication {
             System.out.println("Ended: " + ended + ",TimeTaken" + Duration.between(started, ended));
         }
     }
+
 
 
     private static List<Path> parseArguments(String[] args) {

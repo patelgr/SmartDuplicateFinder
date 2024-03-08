@@ -1,0 +1,128 @@
+// Text
+text/html=HTML
+text/x-python-script=Python Script
+text/plain=Text
+text/csv=Text
+application/json=Text
+
+// Image
+image/jpeg=JPEG
+image/png=PNG
+image/gif=GIF
+
+// XML
+application/xml=XML
+
+// Archive
+application/x-rar-compressed=Archive
+application/x-tar=Archive
+application/x-gzip=Archive
+application/zip=Archive
+
+// Multimedia Audio
+audio/x-wav=WAV Audio
+audio/vnd.wave=Multimedia Audio
+audio/x-m4a=Multimedia Audio
+audio/x-mpegurl=Multimedia Audio
+audio/mp4=Multimedia Audio
+audio/flac=Multimedia Audio
+audio/mpeg=Multimedia Audio
+audio/ogg=Multimedia Audio
+audio/amr=Multimedia Audio
+audio/aac=Multimedia Audio
+audio/basic=Multimedia Audio
+
+// Multimedia Video
+video/quicktime=Multimedia Video
+video/mp4=Multimedia Video
+video/x-ms-wmv=Multimedia Video
+video/x-msvideo=Multimedia Video
+video/x-matroska=Multimedia Video
+video/ogg=Multimedia Video
+video/webm=Multimedia Video
+video/mpeg=Multimedia Video
+
+// Office Documents
+application/vnd.ms-excel=Excel (Legacy)
+application/vnd.apple.keynote=Keynote
+application/vnd.apple.pages=Pages
+application/vnd.apple.numbers=Numbers
+application/vnd.adobe.air-application-installer-package+zip=Adobe AIR Installer
+application/vnd.amazon.ebook=Kindle Ebook
+application/vnd.android.package-archive=Android Package
+application/x-msdownload=Windows Executable
+application/java-archive=Java Archive
+application/vnd.ms-cab-compressed=Microsoft Cabinet File
+application/x-tika-msoffice=Microsoft Office Document
+application/vnd.oasis.opendocument.text=OpenDocument Text
+application/vnd.oasis.opendocument.spreadsheet=OpenDocument Spreadsheet
+application/vnd.oasis.opendocument.presentation=OpenDocument Presentation
+application/vnd.ms-htmlhelp=HTML Help File
+application/vnd.ms-works=Microsoft Works Document
+application/vnd.lotus-wordpro=Lotus WordPro Document
+application/vnd.lotus-1-2-3=Lotus 1-2-3 Spreadsheet
+application/x-dos_ms_excel=Excel (DOS)
+application/x-works-spreadsheet=Microsoft Works Spreadsheet
+application/x-works=Microsoft Works Database
+application/vnd.ms-wpl=Windows Media Player Playlist
+application/vnd.ms-xpsdocument=XPS Document
+application/x-pkcs12=PKCS #12 File
+application/msword=Document
+application/vnd.ms-powerpoint=Document
+application/vnd.openxmlformats-officedocument.wordprocessingml.document=Document
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=Document
+application/vnd.openxmlformats-officedocument.presentationml.presentation=Document
+
+// PDF
+application/pdf=PDF
+
+// Others
+application/postscript=PostScript
+application/x-shockwave-flash=Flash Animation
+application/octet-stream=Binary Data
+
+null = Unknown
+image/vnd.adobe.photoshop = Image
+application/vnd.ms-excel.addin.macroenabled.12 = Excel (Macro-enabled)
+model/obj = Model
+text/vtt = Text
+text/php = Text
+image/webp = Image
+application/sql = SQL
+text/javascript = JavaScript
+text/rtf = Rich Text Format (RTF)
+application/x-webarchive = Web Archive
+text/vcard = vCard
+text/markdown = Markdown
+application/epub+zip = EPUB
+text/css = CSS
+text/calendar = Calendar
+application/x-x509-ca-cert = Certificate (X.509)
+image/vnd.microsoft.icon = Icon
+image/bmp = BMP Image
+application/x-troff-msvideo = Video (TROFF)
+image/svg+xml = SVG Image
+application/xhtml+xml = XHTML
+application/x-shar = Shell Archive
+application/vnd.rar = RAR Archive
+application/gzip = GZIP Archive
+application/macbinary = MacBinary
+application/vnd.ms-excel.sheet.macroenabled.12 = Excel Macro-enabled
+image/heic = HEIC Image
+application/vnd.openxmlformats-officedocument.presentationml.template = PowerPoint Template
+image/tiff = TIFF Image
+text/vnd.graphviz = Graphviz
+application/zip = ZIP Archive
+application/vnd.openxmlformats-officedocument.wordprocessingml.template = Word Template
+text/x-perl = Perl Script
+application/illustrator = Adobe Illustrator
+application/vnd.ms-powerpoint = PowerPoint
+application/vnd.ms-excel.sheet.binary.macroenabled.12 = Excel Binary (Macro-enabled)
+application/vnd.ms-office = MS Office Document
+application/vnd.oasis.opendocument.presentation = OpenDocument Presentation
+application/vnd.oasis.opendocument.spreadsheet = OpenDocument Spreadsheet
+application/vnd.oasis.opendocument.text = OpenDocument Text
+application/vnd.openxmlformats-officedocument.presentationml.presentation = PowerPoint Presentation
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet = Excel Spreadsheet
+application/vnd.openxmlformats-officedocument.wordprocessingml.document = Word Document
+

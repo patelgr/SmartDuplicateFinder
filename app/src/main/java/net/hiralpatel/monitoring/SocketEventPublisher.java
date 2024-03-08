@@ -69,8 +69,11 @@ public class SocketEventPublisher implements Subscriber, Closeable {
         }
     }
 
-    public void handleEvent(Object event) {
-        String eventString = event.toString();
+    @Override
+    public void handleEvent(Event event) {
+        // Convert the event to a string representation, for example:
+        String eventString = "Level: " + event.logLevel() + " - Data: " + event.eventData();
+
         synchronized (messageLock) {
             secondLastMessage = lastMessage; // Shift the last message to second last
             lastMessage = eventString; // Update the last message with the new event
@@ -80,6 +83,13 @@ public class SocketEventPublisher implements Subscriber, Closeable {
             writer.println(eventString); // Send the event to all connected clients
             writer.flush();
         });
+    }
+
+    @Override
+    public boolean isInterestedIn(LogLevel logLevel) {
+        // For simplicity, this subscriber is interested in all log levels
+        // You can add more complex logic here if needed
+        return true;
     }
 
     @Override
@@ -102,5 +112,4 @@ public class SocketEventPublisher implements Subscriber, Closeable {
             }
         }
     }
-
 }
