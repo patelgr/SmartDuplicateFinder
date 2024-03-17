@@ -41,43 +41,46 @@ public class ReportGenerator {
             return;
         }
 
-        try (BufferedWriter htmlWriter = new BufferedWriter(new FileWriter(System.getProperty("user.home") + "/DuplicateItemsReport.html"));
+        try (BufferedWriter htmlWriter = new BufferedWriter(new FileWriter(System.getProperty("user.home") + "/DuplicateItemsReport2.html"));
              BufferedWriter scriptWriter = new BufferedWriter(new FileWriter(System.getProperty("user.home") + "/Downloads/dups.sh"))) {
             htmlWriter.write(HTML_HEADER);
 
             for (Map.Entry<String, List<Path>> entry : duplicates.entrySet()) {
                 htmlWriter.append("<h2>Duplicate Files/Directory, Hash:").append(entry.getKey()).append(",Size:").append(String.valueOf(entry.getValue().size())).append("</h2>\n");
-                htmlWriter.append("<table>\n");
-                htmlWriter.append("<tr><th>File Path</th><th>Size</th><th>Action</th></tr>\n");
-
                 List<Path> paths = entry.getValue();
+                if (paths.size() > 1) {
+                    htmlWriter.append("<table>\n");
+                    htmlWriter.append("<tr><th>File Path</th><th>Size</th><th>Action</th></tr>\n");
 
-                sortPaths(paths);
 
-                Path originalFilePath = paths.getFirst(); // Assume the first path after sorting is the original
+                    sortPaths(paths);
 
-                for (Path path : paths) {
-                    long size = Files.size(path); // Get the size of the file.
+                    Path originalFilePath = paths.getFirst(); // Assume the first path after sorting is the original
 
-                    if (size > 1024 * 1024) {
-                        htmlWriter.append("<tr><td>").append(path.toString()).append("</td><td>").append(FileUtils.formatSize(size)).append("</td>");
+                    for (Path path : paths) {
+                        long size = Files.size(path); // Get the size of the file.
 
-                        boolean idOriginalPath = path.equals(originalFilePath);
-                        if (idOriginalPath || meetsAnyActionCriteria(path, actionCriteria)) {
-                            htmlWriter.append("<td>").append(idOriginalPath ? "Keep as original" : "Skipped due to criteria").append("</td>");
-                        } else {
-                            String command = String.format(
-                                    "(cmp --silent \"%s\" \"%s\" && rm \"%s\" && echo \"%s: success\") || echo \"%s: failure\"",
-                                    originalFilePath, path, path, path, path);
-                            htmlWriter.append("<td>").append(command).append("</td>");
-                            scriptWriter.append(command).append("\n");
+                        if (size > 1024 * 1024) {
+                            htmlWriter.append("<tr><td>").append(path.toString()).append("</td><td>").append(FileUtils.formatSize(size)).append("</td>");
+
+                            boolean idOriginalPath = path.equals(originalFilePath);
+                            if (idOriginalPath || meetsAnyActionCriteria(path, actionCriteria)) {
+                                htmlWriter.append("<td>").append(idOriginalPath ? "Keep as original" : "Skipped due to criteria").append("</td>");
+                            } else {
+                                String command = String.format("compare_and_delete \"%s\" \"%s\"", originalFilePath, path);
+                                htmlWriter.append("<td>").append(command).append("</td>");
+                                scriptWriter.append(command).append("\n");
+                            }
+
+                            htmlWriter.append("</tr>\n");
                         }
-
-                        htmlWriter.append("</tr>\n");
                     }
+
+                    htmlWriter.append("</table>\n");
+                } else {
+                    htmlWriter.append("<div> 1 File or less:").append(String.valueOf(paths)).append("</div>");
                 }
 
-                htmlWriter.append("</table>\n");
             }
 
             htmlWriter.write(HTML_FOOTER);

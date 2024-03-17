@@ -14,18 +14,12 @@ import java.util.stream.Stream;
 public class FileScanner {
     private static final EventPublisher publisher = EventPublisher.INSTANCE;
 
-    public static Map<Long, List<Path>> getDuplicatesBySize(Path commonAncestor, List<Path> filterPaths) {
-        publisher.publishEvent(Events.InfoEvent("Starting duplicate file scan in directory: " + commonAncestor));
-
+    public static Map<Long, List<Path>> getDuplicatesBySize(List<Path> paths) {
+        publisher.publishEvent(Events.InfoEvent("Starting duplicate file scan in directory: " + paths));
         Map<Long, List<Path>> filesBySize = new HashMap<>(500_000);
-        if (!Files.exists(commonAncestor) || !Files.isDirectory(commonAncestor)) {
-            String errorMessage = "Invalid directory: " + commonAncestor + ". Directory does not exist or is not accessible.";
-            publisher.publishEvent(Events.InfoEvent(errorMessage));
-            throw new IllegalArgumentException(errorMessage);
-        }
-
         Predicate<Path> filterOperation = getPathPredicate();
-        List<Path> files = walkFileTree(commonAncestor, filterOperation, filterPaths);
+
+        List<Path> files =  paths.stream().map(p ->walkFileTree(p,filterOperation)).flatMap(List::stream).toList();
 
         files.forEach(path -> {
             try {
@@ -36,6 +30,7 @@ public class FileScanner {
             }
         });
 
+        publisher.publishEvent(Events.InfoEvent("Duplicate file scan completed. FileCount found: " + filesBySize.size()));
         Map<Long, List<Path>> duplicates = filesBySize.entrySet().stream()
                 .filter(entry -> entry.getValue().size() > 1)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -59,7 +54,7 @@ public class FileScanner {
         };
     }
 
-    private static List<Path> walkFileTree(Path directory, Predicate<Path> filterOperation, List<Path> filterPaths) {
+    private static List<Path> walkFileTree(Path directory, Predicate<Path> filterOperation) {
         publisher.publishEvent(Events.InfoEvent("Walking file tree starting from directory: " + directory));
         List<Path> collectedPaths = new ArrayList<>();
 
@@ -69,8 +64,7 @@ public class FileScanner {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     try {
                         if (Files.isWritable(file) && Files.isReadable(file) && Files.isRegularFile(file)) {
-                            boolean matchesFilterPath = filterPaths.isEmpty() || filterPaths.stream().anyMatch(file::startsWith);
-                            if (matchesFilterPath && filterOperation.test(file)) {
+                            if (filterOperation.test(file)) {
                                 collectedPaths.add(file);
                             }
                         }

@@ -25,13 +25,13 @@ public class DuplicateFinder {
 
         // Step 1: Find common ancestor
 
-        Path commonAncestor = wrapper.execute("Find Common Ancestor", () ->
-                DirectoryAggregator.findCommonAncestor(paths)
-        );
+//        Path commonAncestor = wrapper.execute("Find Common Ancestor", () ->
+//                DirectoryAggregator.findCommonAncestor(paths)
+//        );
 
         // Step 2: Scan for potential duplicates based on file size
         Map<Long, List<Path>> filesBySize = wrapper.execute("Scan Duplicates by Size", () ->
-                FileScanner.getDuplicatesBySize(commonAncestor, paths)
+                FileScanner.getDuplicatesBySize(paths)
         );
 
         // Step 3: Refine duplicate detection by hashing
@@ -39,19 +39,20 @@ public class DuplicateFinder {
                 HashScanner.scanForFileDuplicates(filesBySize)
         );
 
-        // Step 4: Build directory structure with confirmed duplicates
-        Directory rootDirectory = wrapper.execute("Build Directory Structure", () ->
-                new Directory(commonAncestor, fileHashes)
-        );
+//        // Step 4: Build directory structure with confirmed duplicates
+//        Directory rootDirectory = wrapper.execute("Build Directory Structure", () ->
+//                new Directory(commonAncestor, fileHashes)
+//        );
 
         // Step 5: Extract duplicates from the directory structure
 
-        Map<String, List<Path>> extractDuplicates = wrapper.execute("Extract Duplicates", () ->
-                DuplicateExtractor.extract(rootDirectory)
-        );
+//        Map<String, List<Path>> extractDuplicates = wrapper.execute("Extract Duplicates", () ->
+//                DuplicateExtractor.extract(rootDirectory));
+//        Map<String, List<Path>> extractDuplicates = wrapper.execute("Extract Duplicates", () ->
+//                DuplicateExtractor.extract(fileHashes));
 
         StepWrapper.displayStatsReport();
-        return extractDuplicates;
+        return fileHashes;
     }
 
 

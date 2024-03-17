@@ -5,6 +5,7 @@ import net.hiralpatel.monitoring.EventPublisher;
 import net.hiralpatel.monitoring.Events;
 import net.hiralpatel.monitoring.MonitoringClient;
 import net.hiralpatel.monitoring.SocketEventPublisher;
+import net.hiralpatel.ui.ReportGenerator;
 import net.hiralpatel.ui.ReportGeneratorBySize;
 
 import java.io.IOException;
@@ -28,7 +29,9 @@ class SDFApplication {
         } else {
             System.out.println("Mode:server");
             EventPublisher publisher = EventPublisher.INSTANCE;
-            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents"));
+//            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents"),Paths.get("/Users/gaurav/Documents/Home"));
+//            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents"));
+            List<Path> directoryPaths = List.of(Paths.get("/Volumes/Seagate5tb/Documents/Pictures/Old"));
             DuplicateFinder finder = new DuplicateFinder();
             try (SocketEventPublisher socketEventPublisher = new SocketEventPublisher(5000)) {
                 publisher.addSubscriber(socketEventPublisher); // Correctly adds as a Subscriber
@@ -39,6 +42,7 @@ class SDFApplication {
 
                 // Generate and output report
                 ReportGeneratorBySize.generateReport(duplicates);
+                ReportGenerator.generateReport(duplicates);
                 publisher.publishEvent(Events.InfoEvent("Processing completed"));
             } catch (IOException e) {
                 e.printStackTrace();
